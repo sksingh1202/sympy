@@ -20,6 +20,7 @@ from sympy.testing.pytest import raises, XFAIL, skip, warns_deprecated_sympy
 from sympy.assumptions import Q
 from sympy.tensor.array import Array
 from sympy.matrices.expressions import MatPow
+from sympy.matrices.common import NonInvertibleMatrixError
 
 from sympy.abc import a, b, c, d, x, y, z, t
 
@@ -832,93 +833,6 @@ def test_random():
                 zero_count += 1
     assert zero_count == 30
 
-<<<<<<< HEAD
-
-def test_LUdecomp():
-    testmat = Matrix([[0, 2, 5, 3],
-                      [3, 3, 7, 4],
-                      [8, 4, 0, 2],
-                      [-2, 6, 3, 4]])
-    L, U, p = testmat.LUdecomposition()
-    assert L.is_lower
-    assert U.is_upper
-    assert (L*U).permute_rows(p, 'backward') - testmat == zeros(4)
-
-    testmat = Matrix([[6, -2, 7, 4],
-                      [0, 3, 6, 7],
-                      [1, -2, 7, 4],
-                      [-9, 2, 6, 3]])
-    L, U, p = testmat.LUdecomposition()
-    assert L.is_lower
-    assert U.is_upper
-    assert (L*U).permute_rows(p, 'backward') - testmat == zeros(4)
-
-    # non-square
-    testmat = Matrix([[1, 2, 3],
-                      [4, 5, 6],
-                      [7, 8, 9],
-                      [10, 11, 12]])
-    L, U, p = testmat.LUdecomposition(rankcheck=False)
-    assert L.is_lower
-    assert U.is_upper
-    assert (L*U).permute_rows(p, 'backward') - testmat == zeros(4, 3)
-
-    # square and singular
-    testmat = Matrix([[1, 2, 3],
-                      [2, 4, 6],
-                      [4, 5, 6]])
-    L, U, p = testmat.LUdecomposition(rankcheck=False)
-    assert L.is_lower
-    assert U.is_upper
-    assert (L*U).permute_rows(p, 'backward') - testmat == zeros(3)
-
-    M = Matrix(((1, x, 1), (2, y, 0), (y, 0, z)))
-    L, U, p = M.LUdecomposition()
-    assert L.is_lower
-    assert U.is_upper
-    assert (L*U).permute_rows(p, 'backward') - M == zeros(3)
-
-    mL = Matrix((
-        (1, 0, 0),
-        (2, 3, 0),
-    ))
-    assert mL.is_lower is True
-    assert mL.is_upper is False
-    mU = Matrix((
-        (1, 2, 3),
-        (0, 4, 5),
-    ))
-    assert mU.is_lower is False
-    assert mU.is_upper is True
-
-    # test FF LUdecomp
-    M = Matrix([[1, 3, 3],
-                [3, 2, 6],
-                [3, 2, 2]])
-    P, L, Dee, U = M.LUdecompositionFF()
-    assert P*M == L*Dee.inv()*U
-
-    M = Matrix([[1,  2, 3,  4],
-                [3, -1, 2,  3],
-                [3,  1, 3, -2],
-                [6, -1, 0,  2]])
-    P, L, Dee, U = M.LUdecompositionFF()
-    assert P*M == L*Dee.inv()*U
-
-    M = Matrix([[0, 0, 1],
-                [2, 3, 0],
-                [3, 1, 4]])
-    P, L, Dee, U = M.LUdecompositionFF()
-    assert P*M == L*Dee.inv()*U
-
-    # issue 15794
-    M = Matrix(
-        [[1, 2, 3],
-        [4, 5, 6],
-        [7, 8, 9]]
-    )
-    raises(ValueError, lambda : M.LUdecomposition_Simple(rankcheck=True))
-=======
 def test_LUsolve():
     A = Matrix([[2, 3, 5],
                 [3, 6, 2],
@@ -956,7 +870,7 @@ def test_LUsolve():
 
     A = Matrix(4, 4, lambda i, j: 1/(i+j+1) if i != 3 else 0)
     b = Matrix.zeros(4, 1)
-    raises(NotImplementedError, lambda: A.LUsolve(b))
+    raises(NonInvertibleMatrixError, lambda: A.LUsolve(b))
 
 
 def test_QRsolve():
@@ -983,8 +897,6 @@ def test_QRsolve():
     b = A*x
     soln = A.QRsolve(b)
     assert soln == x
-
->>>>>>> 31e815f084dc22977c6a2222aa8d4f45bda17188
 
 def test_inverse():
     A = eye(4)
@@ -2278,52 +2190,6 @@ def test_cholesky():
     assert A.cholesky() == Matrix(((2, 0, 0), (I, 1, 0), (1 - I, 0, 3)))
 
 
-<<<<<<< HEAD
-def test_LDLdecomposition():
-    raises(NonSquareMatrixError, lambda: Matrix((1, 2)).LDLdecomposition())
-    raises(ValueError, lambda: Matrix(((1, 2), (3, 4))).LDLdecomposition())
-    raises(ValueError, lambda: Matrix(((5 + I, 0), (0, 1))).LDLdecomposition())
-    raises(ValueError, lambda: Matrix(((1, 5), (5, 1))).LDLdecomposition())
-    raises(ValueError, lambda: Matrix(((1, 2), (3, 4))).LDLdecomposition(hermitian=False))
-    A = Matrix(((1, 5), (5, 1)))
-    L, D = A.LDLdecomposition(hermitian=False)
-    assert L * D * L.T == A
-    A = Matrix(((25, 15, -5), (15, 18, 0), (-5, 0, 11)))
-    L, D = A.LDLdecomposition()
-    assert L * D * L.T == A
-    assert L.is_lower
-    assert L == Matrix([[1, 0, 0], [ Rational(3, 5), 1, 0], [Rational(-1, 5), Rational(1, 3), 1]])
-    assert D.is_diagonal()
-    assert D == Matrix([[25, 0, 0], [0, 9, 0], [0, 0, 9]])
-    A = Matrix(((4, -2*I, 2 + 2*I), (2*I, 2, -1 + I), (2 - 2*I, -1 - I, 11)))
-    L, D = A.LDLdecomposition()
-    assert expand_mul(L * D * L.H) == A
-    assert L == Matrix(((1, 0, 0), (I/2, 1, 0), (S.Half - I/2, 0, 1)))
-    assert D == Matrix(((4, 0, 0), (0, 1, 0), (0, 0, 9)))
-
-    raises(NonSquareMatrixError, lambda: SparseMatrix((1, 2)).LDLdecomposition())
-    raises(ValueError, lambda: SparseMatrix(((1, 2), (3, 4))).LDLdecomposition())
-    raises(ValueError, lambda: SparseMatrix(((5 + I, 0), (0, 1))).LDLdecomposition())
-    raises(ValueError, lambda: SparseMatrix(((1, 5), (5, 1))).LDLdecomposition())
-    raises(ValueError, lambda: SparseMatrix(((1, 2), (3, 4))).LDLdecomposition(hermitian=False))
-    A = SparseMatrix(((1, 5), (5, 1)))
-    L, D = A.LDLdecomposition(hermitian=False)
-    assert L * D * L.T == A
-    A = SparseMatrix(((25, 15, -5), (15, 18, 0), (-5, 0, 11)))
-    L, D = A.LDLdecomposition()
-    assert L * D * L.T == A
-    assert L.is_lower
-    assert L == Matrix([[1, 0, 0], [ Rational(3, 5), 1, 0], [Rational(-1, 5), Rational(1, 3), 1]])
-    assert D.is_diagonal()
-    assert D == Matrix([[25, 0, 0], [0, 9, 0], [0, 0, 9]])
-    A = SparseMatrix(((4, -2*I, 2 + 2*I), (2*I, 2, -1 + I), (2 - 2*I, -1 - I, 11)))
-    L, D = A.LDLdecomposition()
-    assert expand_mul(L * D * L.H) == A
-    assert L == Matrix(((1, 0, 0), (I/2, 1, 0), (S.Half - I/2, 0, 1)))
-    assert D == Matrix(((4, 0, 0), (0, 1, 0), (0, 0, 9)))
-
-
-=======
 def test_cholesky_solve():
     A = Matrix([[2, 3, 5],
                 [3, 6, 2],
@@ -2446,8 +2312,6 @@ def test_diagonal_solve():
 
     A = Matrix([[1, 0], [1, 2]])
     raises(TypeError, lambda: A.diagonal_solve(B))
->>>>>>> 31e815f084dc22977c6a2222aa8d4f45bda17188
-
 
 def test_matrix_norm():
     # Vector Tests
@@ -3110,6 +2974,170 @@ def test_pinv_rank_deficient_when_diagonalization_fails():
         assert AAp.H == AAp
         assert ApA.H == ApA
 
+def test_gauss_jordan_solve():
+
+    # Square, full rank, unique solution
+    A = Matrix([[1, 2, 3], [4, 5, 6], [7, 8, 10]])
+    b = Matrix([3, 6, 9])
+    sol, params = A.gauss_jordan_solve(b)
+    assert sol == Matrix([[-1], [2], [0]])
+    assert params == Matrix(0, 1, [])
+
+    # Square, full rank, unique solution, B has more columns than rows
+    A = eye(3)
+    B = Matrix([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
+    sol, params = A.gauss_jordan_solve(B)
+    assert sol == B
+    assert params == Matrix(0, 4, [])
+
+    # Square, reduced rank, parametrized solution
+    A = Matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    b = Matrix([3, 6, 9])
+    sol, params, freevar = A.gauss_jordan_solve(b, freevar=True)
+    w = {}
+    for s in sol.atoms(Symbol):
+        # Extract dummy symbols used in the solution.
+        w[s.name] = s
+    assert sol == Matrix([[w['tau0'] - 1], [-2*w['tau0'] + 2], [w['tau0']]])
+    assert params == Matrix([[w['tau0']]])
+    assert freevar == [2]
+
+    # Square, reduced rank, parametrized solution, B has two columns
+    A = Matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    B = Matrix([[3, 4], [6, 8], [9, 12]])
+    sol, params, freevar = A.gauss_jordan_solve(B, freevar=True)
+    w = {}
+    for s in sol.atoms(Symbol):
+        # Extract dummy symbols used in the solution.
+        w[s.name] = s
+    assert sol == Matrix([[w['tau0'] - 1, w['tau1'] - Rational(4, 3)],
+                          [-2*w['tau0'] + 2, -2*w['tau1'] + Rational(8, 3)],
+                          [w['tau0'], w['tau1']],])
+    assert params == Matrix([[w['tau0'], w['tau1']]])
+    assert freevar == [2]
+
+    # Square, reduced rank, parametrized solution
+    A = Matrix([[1, 2, 3], [2, 4, 6], [3, 6, 9]])
+    b = Matrix([0, 0, 0])
+    sol, params = A.gauss_jordan_solve(b)
+    w = {}
+    for s in sol.atoms(Symbol):
+        w[s.name] = s
+    assert sol == Matrix([[-2*w['tau0'] - 3*w['tau1']],
+                         [w['tau0']], [w['tau1']]])
+    assert params == Matrix([[w['tau0']], [w['tau1']]])
+
+    # Square, reduced rank, parametrized solution
+    A = Matrix([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
+    b = Matrix([0, 0, 0])
+    sol, params = A.gauss_jordan_solve(b)
+    w = {}
+    for s in sol.atoms(Symbol):
+        w[s.name] = s
+    assert sol == Matrix([[w['tau0']], [w['tau1']], [w['tau2']]])
+    assert params == Matrix([[w['tau0']], [w['tau1']], [w['tau2']]])
+
+    # Square, reduced rank, no solution
+    A = Matrix([[1, 2, 3], [2, 4, 6], [3, 6, 9]])
+    b = Matrix([0, 0, 1])
+    raises(ValueError, lambda: A.gauss_jordan_solve(b))
+
+    # Rectangular, tall, full rank, unique solution
+    A = Matrix([[1, 5, 3], [2, 1, 6], [1, 7, 9], [1, 4, 3]])
+    b = Matrix([0, 0, 1, 0])
+    sol, params = A.gauss_jordan_solve(b)
+    assert sol == Matrix([[Rational(-1, 2)], [0], [Rational(1, 6)]])
+    assert params == Matrix(0, 1, [])
+
+    # Rectangular, tall, full rank, unique solution, B has less columns than rows
+    A = Matrix([[1, 5, 3], [2, 1, 6], [1, 7, 9], [1, 4, 3]])
+    B = Matrix([[0,0], [0, 0], [1, 2], [0, 0]])
+    sol, params = A.gauss_jordan_solve(B)
+    assert sol == Matrix([[Rational(-1, 2), Rational(-2, 2)], [0, 0], [Rational(1, 6), Rational(2, 6)]])
+    assert params == Matrix(0, 2, [])
+
+    # Rectangular, tall, full rank, no solution
+    A = Matrix([[1, 5, 3], [2, 1, 6], [1, 7, 9], [1, 4, 3]])
+    b = Matrix([0, 0, 0, 1])
+    raises(ValueError, lambda: A.gauss_jordan_solve(b))
+
+    # Rectangular, tall, full rank, no solution, B has two columns (2nd has no solution)
+    A = Matrix([[1, 5, 3], [2, 1, 6], [1, 7, 9], [1, 4, 3]])
+    B = Matrix([[0,0], [0, 0], [1, 0], [0, 1]])
+    raises(ValueError, lambda: A.gauss_jordan_solve(B))
+
+    # Rectangular, tall, full rank, no solution, B has two columns (1st has no solution)
+    A = Matrix([[1, 5, 3], [2, 1, 6], [1, 7, 9], [1, 4, 3]])
+    B = Matrix([[0,0], [0, 0], [0, 1], [1, 0]])
+    raises(ValueError, lambda: A.gauss_jordan_solve(B))
+
+    # Rectangular, tall, reduced rank, parametrized solution
+    A = Matrix([[1, 5, 3], [2, 10, 6], [3, 15, 9], [1, 4, 3]])
+    b = Matrix([0, 0, 0, 1])
+    sol, params = A.gauss_jordan_solve(b)
+    w = {}
+    for s in sol.atoms(Symbol):
+        w[s.name] = s
+    assert sol == Matrix([[-3*w['tau0'] + 5], [-1], [w['tau0']]])
+    assert params == Matrix([[w['tau0']]])
+
+    # Rectangular, tall, reduced rank, no solution
+    A = Matrix([[1, 5, 3], [2, 10, 6], [3, 15, 9], [1, 4, 3]])
+    b = Matrix([0, 0, 1, 1])
+    raises(ValueError, lambda: A.gauss_jordan_solve(b))
+
+    # Rectangular, wide, full rank, parametrized solution
+    A = Matrix([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 1, 12]])
+    b = Matrix([1, 1, 1])
+    sol, params = A.gauss_jordan_solve(b)
+    w = {}
+    for s in sol.atoms(Symbol):
+        w[s.name] = s
+    assert sol == Matrix([[2*w['tau0'] - 1], [-3*w['tau0'] + 1], [0],
+                         [w['tau0']]])
+    assert params == Matrix([[w['tau0']]])
+
+    # Rectangular, wide, reduced rank, parametrized solution
+    A = Matrix([[1, 2, 3, 4], [5, 6, 7, 8], [2, 4, 6, 8]])
+    b = Matrix([0, 1, 0])
+    sol, params = A.gauss_jordan_solve(b)
+    w = {}
+    for s in sol.atoms(Symbol):
+        w[s.name] = s
+    assert sol == Matrix([[w['tau0'] + 2*w['tau1'] + S.Half],
+                         [-2*w['tau0'] - 3*w['tau1'] - Rational(1, 4)],
+                         [w['tau0']], [w['tau1']]])
+    assert params == Matrix([[w['tau0']], [w['tau1']]])
+    # watch out for clashing symbols
+    x0, x1, x2, _x0 = symbols('_tau0 _tau1 _tau2 tau1')
+    M = Matrix([[0, 1, 0, 0, 0, 0], [0, 0, 0, 1, 0, _x0]])
+    A = M[:, :-1]
+    b = M[:, -1:]
+    sol, params = A.gauss_jordan_solve(b)
+    assert params == Matrix(3, 1, [x0, x1, x2])
+    assert sol == Matrix(5, 1, [x1, 0, x0, _x0, x2])
+
+    # Rectangular, wide, reduced rank, no solution
+    A = Matrix([[1, 2, 3, 4], [5, 6, 7, 8], [2, 4, 6, 8]])
+    b = Matrix([1, 1, 1])
+    raises(ValueError, lambda: A.gauss_jordan_solve(b))
+
+    # Test for immutable matrix
+    A = ImmutableMatrix([[1, 0], [0, 1]])
+    B = ImmutableMatrix([1, 2])
+    sol, params = A.gauss_jordan_solve(B)
+    assert sol == ImmutableMatrix([1, 2])
+    assert params == ImmutableMatrix(0, 1, [])
+    assert sol.__class__ == ImmutableDenseMatrix
+    assert params.__class__ == ImmutableDenseMatrix
+
+
+def test_solve():
+    A = Matrix([[1,2], [2,4]])
+    b = Matrix([[3], [4]])
+    raises(ValueError, lambda: A.solve(b)) #no solution
+    b = Matrix([[ 4], [8]])
+    raises(ValueError, lambda: A.solve(b)) #infinite solution
 
 def test_issue_7201():
     assert ones(0, 1) + ones(0, 1) == Matrix(0, 1, [])
